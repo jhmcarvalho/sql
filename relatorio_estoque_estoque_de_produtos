@@ -1,0 +1,28 @@
+SELECT 	p.id,
+	p.codigointerno,
+	p.eancomercial,
+	coalesce(unidademedida."sigla", p."unidadecomercial") AS produto_unidadecomercial,
+	p.descricao as produto,
+	p.valorunitariocomercial,
+	p.quantidademinima,
+	p.valorminimo,
+	p.ncm,
+	p.empresa_id,
+	coalesce(p.valorcompra, 0) as valorcompra,
+	d.descricao as departamento,
+	sd.descricao as subdepartamento,
+	m.descricao as marca,
+     	sd."id" as subdepartamento_id,
+     	d."id" as departamento_id,
+	m."id" as marca_id,
+	quantidade_estoque_reservado(p.id) AS quantidade_reservada
+FROM produto p
+left join departamento d on d.id = p.departamento_id
+left join subdepartamento sd on sd.id = p.subdepartamento_id
+left join marca m on m.id = p.marca_id
+LEFT JOIN public.unidademedida on unidademedida.id = p.unidademedidacomercial_id
+WHERE p.ativo = TRUE
+  AND p.empresa_id = $P{empresa}
+  AND ($P{estoqueNegativo} = false or p.quantidademinima >= 0)
+  AND ($P{estoqueZerado} = false or p.quantidademinima <> 0)
+  AND ($P{estoqueReservado} = false or quantidade_estoque_reservado(p.id) > 0)
